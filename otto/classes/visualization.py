@@ -116,7 +116,7 @@ class Visualization:
 
     def _setup_render(self, ):
 
-        figsize = (12.5, 5.5)
+        figsize = (17.5, 5.5)
 
         if self.env.Ndim == 1:
             # setup figure
@@ -156,7 +156,7 @@ class Visualization:
 
         elif self.env.Ndim == 2:
             # setup figure
-            fig, ax = plt.subplots(1, 2, figsize=figsize)
+            fig, ax = plt.subplots(1, 3, figsize=figsize)
             bottom = 0.1
             top = 0.88
             left = 0.05
@@ -189,9 +189,39 @@ class Visualization:
             ax[1].set_aspect("equal", adjustable="box")
             ax[1].axis("off")
 
+            # PMF
+            if hasattr(self.env, 'p_source'):
+                hit_rate = np.zeros_like(self.env.p_source)
+
+                # for each point in the grid calculate the hit rate
+                for i in range(self.env.N):
+                    for j in range(self.env.N):
+                        h = 0
+                        d = np.linalg.norm(np.asarray([i, j]) - np.asarray(self.env.source), ord=2)
+                        hit_rate[i,j] = 1 - self.env._Poisson(self.env._mean_number_of_hits(d), h)
+
+                cmap1 = self._cmap1()
+                sm1 = plt.cm.ScalarMappable(norm=colors.Normalize(vmin=np.min(hit_rate), vmax=np.max(hit_rate)), cmap=cmap1)
+                divider = make_axes_locatable(ax[2])
+                cax1 = divider.append_axes("right", size="5%", pad=0.3)
+                cbar2 = fig.colorbar(sm1, cax=cax1)
+                if self.video_live:
+                    self.cbar2 = cbar2
+                ax[2].set_aspect("equal", adjustable="box")
+                ax[2].axis("off")
+
+                ax[2].imshow(
+                    np.transpose(hit_rate),  # hit rate around the source
+                    vmin=np.min(hit_rate),
+                    vmax=np.max(hit_rate),
+                    origin="lower",
+                    aspect='equal',
+                )
+                ax[2].set_title("Poisson PMF")
+
             # position of source
             if self.env.draw_source:
-                for i in range(2):
+                for i in range(3):
                     ax[i].plot(self.env.source[0], self.env.source[1], color="r", marker="$+$", markersize=8, zorder=10000)
 
         elif self.env.Ndim == 3:
@@ -384,6 +414,17 @@ class Visualization:
             aspect='equal',
             cmap=cmap1,
         )
+
+        # p_evidence
+        # if hasattr(self.env, 'p_evidence'):
+        #     img2 = ax[2].imshow(
+        #         np.transpose(self.env.p_evidence[1]),  # evidence for hit==1
+        #         # vmin=np.min(self.env.p_Poisson),
+        #         # vmax=np.max(self.env.p_Poisson),
+        #         origin="lower",
+        #         aspect='equal',
+        #     )
+
         if self.video_live:
             if self.log_prob:
                 sm1 = plt.cm.ScalarMappable(norm=colors.LogNorm(vmin=1e-3, vmax=1.0), cmap=cmap1)
@@ -392,8 +433,8 @@ class Visualization:
             self.cbar1.update_normal(sm1)
 
         # position of agent
-        aloc = [0] * 2
-        for i in range(2):
+        aloc = [0] * 3
+        for i in range(3):
             aloc[i] = ax[i].plot(self.env.agent[0], self.env.agent[1], "ro")
 
         if self.video_live:
