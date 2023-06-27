@@ -200,6 +200,8 @@ class Visualization:
                         d = np.linalg.norm(np.asarray([i, j]) - np.asarray(self.env.source), ord=2)
                         hit_rate[i,j] = 1 - self.env._Poisson(self.env._mean_number_of_hits(d), h)
 
+                hit_rate /= np.sum(hit_rate)
+
                 cmap1 = self._cmap1()
                 sm1 = plt.cm.ScalarMappable(norm=colors.Normalize(vmin=np.min(hit_rate), vmax=np.max(hit_rate)), cmap=cmap1)
                 divider = make_axes_locatable(ax[2])
